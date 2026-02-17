@@ -58,3 +58,8 @@ export async function addMessageAndReply(chatId, message) {
 
   return { role: "model", content: reply };
 }
+
+export async function deleteChat(id) {
+  await connectDB();
+  await Chat.findByIdAndDelete(id);
+}

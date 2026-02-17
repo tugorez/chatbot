@@ -1,4 +1,8 @@
-import { showChat, addMessageAndReply } from "@/services/chat_service";
+import {
+  showChat,
+  addMessageAndReply,
+  deleteChat,
+} from "@/services/chat_service";
 
 export async function GET(request, { params }) {
   const { id } = await params;
@@ -11,4 +15,10 @@ export async function POST(request, { params }) {
   const { message } = await request.json();
   const reply = await addMessageAndReply(id, message);
   return Response.json(reply);
+}
+
+export async function DELETE(request, { params }) {
+  const { id } = await params;
+  await deleteChat(id);
+  return Response.json({ ok: true });
 }
