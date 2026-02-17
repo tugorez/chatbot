@@ -1,5 +1,5 @@
 import connectDB from "@/infra/db";
-import { generateReply } from "@/infra/gemini";
+import { generateReply, generateReplyStream } from "@/infra/gemini";
 import Chat from "@/models/chat";
 
 export async function listChats() {
@@ -57,4 +57,27 @@ export async function addMessageAndReply(chatId, message) {
   await chat.save();
 
   return { role: "model", content: reply };
+}
+
+export async function addUserMessage(chatId, message) {
+  await connectDB();
+
+  const chat = await Chat.findById(chatId);
+  chat.messages.push({ role: "user", content: message });
+  await chat.save();
+
+  return chat;
+}
+
+export async function streamReply(chat) {
+  const stream = await generateReplyStream(chat.messages);
+
+  return {
+    stream,
+    async save(fullText) {
+      chat.messages.push({ role: "model", content: fullText });
+      chat.updatedAt = new Date();
+      await chat.save();
+    },
+  };
 }

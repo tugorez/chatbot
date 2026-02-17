@@ -18,6 +18,7 @@ export default function ChatInterface({ id, turns }) {
     setMessages((prev) => [
       ...prev,
       { id: Date.now().toString(), role: "user", content: userMessage },
+      { id: "streaming", role: "model", content: "" },
     ]);
 
     try {
@@ -26,8 +27,27 @@ export default function ChatInterface({ id, turns }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMessage }),
       });
-      const reply = await res.json();
-      setMessages((prev) => [...prev, { id: Date.now().toString(), ...reply }]);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === "streaming" ? { ...m, content: m.content + chunk } : m,
+          ),
+        );
+      }
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === "streaming" ? { ...m, id: Date.now().toString() } : m,
+        ),
+      );
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
